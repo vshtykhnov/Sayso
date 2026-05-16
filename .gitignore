@@ -1,0 +1,15 @@
+.env
+node_modules/
+npm-debug.log*
+dist/
+.cache/
+audio-cache/
+*.log
+*.wav
+*.tmp
+
+# Local bundled runtime. Too large for git; ship it through GitHub Releases.
+resources/silero/python/
+resources/silero/model-cache/
+resources/**/__pycache__/
+resources/**/*.pyc

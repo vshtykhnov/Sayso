@@ -1,0 +1,71 @@
+{
+  "name": "miljentts",
+  "version": "0.2.0",
+  "description": "Local Twitch chat TTS app for OBS Browser Source.",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "app": "electron .",
+    "check": "node --check src/server.js && node --check src/ttsServer.js && node --check src/config.js && node --check src/messageFilter.js && node --check src/appConfigStore.js && node --check src/logger.js && node --check src/ttsEngines.js && node --check public/app.js && node --check public/obs.js && node --check electron/main.js && node --check electron/renderer/renderer.js",
+    "test": "node --test",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "tmi.js": "^1.8.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^42.1.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.miljentts.app",
+    "productName": "MiljenTTS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/piper",
+        "to": "piper",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/silero",
+        "to": "silero",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

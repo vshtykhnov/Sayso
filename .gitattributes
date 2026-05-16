@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+resources/piper/** -text
+*.onnx -text
+*.dll -text
+*.exe -text
+*.ort -text

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MiljenTTS</title>
+    <title>MiljenTTS Debug</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -11,7 +11,7 @@
       <section class="panel" aria-labelledby="title">
         <div class="topbar">
           <div>
-            <h1 id="title">MiljenTTS</h1>
+            <h1 id="title">MiljenTTS Debug</h1>
             <p id="status" class="status">Подключение...</p>
           </div>
           <div class="actions">
@@ -23,7 +23,7 @@
 
         <div class="obs-url">
           <span>OBS Browser Source</span>
-          <strong id="obs-url">http://localhost:3000</strong>
+          <strong id="obs-url">http://localhost:3000/obs</strong>
         </div>
 
         <div class="command-hint">
@@ -33,7 +33,7 @@
 
         <div class="controls">
           <label>
-            Голос
+            Browser voice
             <select id="voice"></select>
           </label>
           <label>
@@ -59,6 +59,7 @@
         </div>
 
         <ol id="log" class="log" aria-label="Последние сообщения"></ol>
+        <audio id="player" preload="auto"></audio>
       </section>
     </main>
 

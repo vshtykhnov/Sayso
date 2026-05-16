@@ -101,6 +101,9 @@ openLogsButton.addEventListener('click', () => {
 
 testButton.addEventListener('click', async () => {
   try {
+    const settings = readForm();
+    await window.miljenTts.saveSettings(settings);
+    await window.miljenTts.updateTtsSettings(settings);
     await window.miljenTts.testVoice(readForm());
     appendLog('Test message sent to OBS page.');
   } catch (error) {

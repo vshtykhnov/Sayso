@@ -197,7 +197,8 @@ function registerIpc() {
       throw new Error('Start server before testing voice.');
     }
 
-    await configStore.save(withPiperDefaults(settings || configStore.load()));
+    const savedSettings = await configStore.save(withPiperDefaults(settings || configStore.load()));
+    await updateRunningTtsSettings(savedSettings);
     return sendTestMessage();
   });
 
@@ -288,6 +289,29 @@ async function sendTestMessage() {
   }
 
   return result;
+}
+
+async function updateRunningTtsSettings(settings) {
+  if (!ttsServer) {
+    return;
+  }
+
+  const response = await fetch(`${getServerBaseUrl()}/api/tts-settings`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      voiceVolume: settings.voiceVolume,
+      voiceRate: settings.voiceRate,
+      voicePitch: settings.voicePitch,
+      ttsEngine: settings.ttsEngine,
+      piperVoiceId: settings.piperVoiceId,
+      sileroSpeaker: settings.sileroSpeaker
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to apply TTS settings: ${response.status}`);
+  }
 }
 
 async function loginWithTwitch(clientId) {

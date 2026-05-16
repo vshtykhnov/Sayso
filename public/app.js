@@ -8,6 +8,7 @@ const voiceSelect = document.querySelector('#voice');
 const volumeInput = document.querySelector('#volume');
 const rateInput = document.querySelector('#rate');
 const pitchInput = document.querySelector('#pitch');
+const player = document.querySelector('#player');
 const volumeValueEl = document.querySelector('#volume-value');
 const rateValueEl = document.querySelector('#rate-value');
 const pitchValueEl = document.querySelector('#pitch-value');
@@ -25,7 +26,7 @@ const state = {
 
 const savedSettings = loadSettings();
 voiceSelect.value = savedSettings.voice || '';
-obsUrlEl.textContent = location.origin;
+obsUrlEl.textContent = `${location.origin}/obs`;
 renderTtsSettingValues();
 
 await loadConfig();
@@ -61,6 +62,8 @@ testButton.addEventListener('click', async () => {
 
 clearButton.addEventListener('click', () => {
   window.speechSynthesis?.cancel?.();
+  player.pause();
+  player.removeAttribute('src');
   state.queue = [];
   state.speaking = false;
   currentEl.textContent = 'очередь очищена';
@@ -72,6 +75,9 @@ voiceSelect.addEventListener('change', saveSettings);
 for (const input of [volumeInput, rateInput, pitchInput]) {
   input.addEventListener('input', () => {
     renderTtsSettingValues();
+    if (player) {
+      player.volume = Number(volumeInput.value);
+    }
   });
 }
 
@@ -99,7 +105,7 @@ function connect() {
   state.socket = socket;
 
   socket.addEventListener('open', () => {
-    setStatus('OBS-страница подключена к локальному серверу', 'pending');
+    setStatus('Debug-страница подключена к локальному серверу', 'pending');
   });
 
   socket.addEventListener('message', (event) => {
@@ -146,7 +152,11 @@ async function drainQueue() {
   currentEl.textContent = `${message.username}: ${message.text}`;
 
   try {
-    await speak(message.spokenText);
+    if (message.audioUrl) {
+      await playAudio(message.audioUrl);
+    } else {
+      await speak(message.spokenText);
+    }
   } finally {
     setTimeout(() => {
       state.speaking = false;
@@ -154,6 +164,19 @@ async function drainQueue() {
       drainQueue();
     }, state.minDelayMs);
   }
+}
+
+function playAudio(url) {
+  return new Promise((resolve) => {
+    window.speechSynthesis?.cancel?.();
+    player.pause();
+    player.currentTime = 0;
+    player.src = url;
+    player.volume = Number(volumeInput.value);
+    player.onended = resolve;
+    player.onerror = resolve;
+    player.play().catch(resolve);
+  });
 }
 
 function speak(text) {
@@ -246,7 +269,7 @@ function renderStatus(payload) {
   } else if (payload.status === 'twitch-error') {
     setStatus(`Ошибка Twitch: ${payload.reason || 'проверьте OAuth токен'}`, 'error');
   } else if (payload.status === 'missing-token') {
-    setStatus(`Нет Twitch OAuth токена. Тестовая озвучка доступна.`, 'warning');
+    setStatus('Нет Twitch OAuth токена. Тестовая озвучка доступна.', 'warning');
   }
 }
 
@@ -261,6 +284,10 @@ function applyTtsSettings(settings) {
 
   if (settings.voicePitch !== undefined) {
     pitchInput.value = settings.voicePitch;
+  }
+
+  if (player) {
+    player.volume = Number(volumeInput.value);
   }
 
   renderTtsSettingValues();

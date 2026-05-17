@@ -467,7 +467,7 @@ function getSileroRuntimeDir() {
 }
 
 function getSileroPythonPath() {
-  return path.join(getSileroRuntimeDir(), 'python', 'Scripts', 'python.exe');
+  return path.join(getSileroRuntimeDir(), 'python', 'python.exe');
 }
 
 function getSileroScriptPath() {

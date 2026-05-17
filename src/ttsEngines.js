@@ -76,8 +76,6 @@ async function synthesizePiper(message, config, audioDir, logger) {
     configPath,
     '--output_file',
     outputFile,
-    '--length_scale',
-    String(rateToLengthScale(config.tts.voiceRate)),
     '--sentence_silence',
     '0.15',
     '--quiet'
@@ -215,9 +213,4 @@ function assertFile(filePath, label) {
   if (!filePath || !fs.existsSync(filePath)) {
     throw new Error(`${label} not found: ${filePath || 'not configured'}`);
   }
-}
-
-function rateToLengthScale(rate) {
-  const normalized = Number(rate) || 1;
-  return Math.min(1.5, Math.max(0.65, 1 / normalized));
 }

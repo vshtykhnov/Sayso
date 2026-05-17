@@ -17,14 +17,13 @@ export function createConfigStore(userDataDir) {
         twitchUsername: saved.twitchUsername || '',
         twitchOAuthToken: saved.twitchOAuthToken || '',
         port: saved.port || 3000,
-        readUsernames: saved.readUsernames ?? true,
+        usernameConnector: saved.usernameConnector ?? '',
         ttsCommand: saved.ttsCommand || '!tts',
         maxMessageLength: saved.maxMessageLength || 220,
         minSecondsBetweenMessages: saved.minSecondsBetweenMessages || 1.2,
         voiceVolume: saved.voiceVolume ?? 1,
-        voiceRate: saved.voiceRate ?? 1,
-        voicePitch: saved.voicePitch ?? 1,
         ttsEngine: saved.ttsEngine || 'browser',
+        ttsLanguage: saved.ttsLanguage || 'en-US',
         obsRoute: saved.obsRoute || '/obs',
         piperVoiceId: saved.piperVoiceId || 'ru_RU-dmitri-medium',
         piperModelPath: saved.piperModelPath || '',
@@ -47,14 +46,13 @@ export function createConfigStore(userDataDir) {
         TWITCH_USERNAME: settings.twitchUsername,
         TWITCH_OAUTH_TOKEN: settings.twitchOAuthToken,
         PORT: String(settings.port),
-        READ_USERNAMES: String(settings.readUsernames),
+        USERNAME_CONNECTOR: settings.usernameConnector ?? '',
         TTS_COMMAND: settings.ttsCommand,
         MAX_MESSAGE_LENGTH: String(settings.maxMessageLength),
         MIN_SECONDS_BETWEEN_MESSAGES: String(settings.minSecondsBetweenMessages),
         VOICE_VOLUME: String(settings.voiceVolume),
-        VOICE_RATE: String(settings.voiceRate),
-        VOICE_PITCH: String(settings.voicePitch),
         TTS_ENGINE: settings.ttsEngine,
+        TTS_LANGUAGE: settings.ttsLanguage,
         OBS_ROUTE: settings.obsRoute,
         PIPER_VOICE_ID: settings.piperVoiceId,
         PIPER_MODEL_PATH: settings.piperModelPath,
@@ -76,14 +74,13 @@ function normalizeSettings(settings) {
     twitchUsername: String(settings.twitchUsername || '').trim(),
     twitchOAuthToken: String(settings.twitchOAuthToken || '').trim(),
     port: toNumber(settings.port, 3000),
-    readUsernames: Boolean(settings.readUsernames),
+    usernameConnector: String(settings.usernameConnector ?? ''),
     ttsCommand: normalizeCommand(settings.ttsCommand),
     maxMessageLength: toNumber(settings.maxMessageLength, 220),
     minSecondsBetweenMessages: toNumber(settings.minSecondsBetweenMessages, 1.2),
     voiceVolume: clampNumber(settings.voiceVolume, 1, 0, 1),
-    voiceRate: clampNumber(settings.voiceRate, 1, 0.7, 1.4),
-    voicePitch: clampNumber(settings.voicePitch, 1, 0.7, 1.3),
     ttsEngine: normalizeEngine(settings.ttsEngine),
+    ttsLanguage: normalizeLanguage(settings.ttsLanguage),
     obsRoute: normalizeRoute(settings.obsRoute || '/obs'),
     piperVoiceId: String(settings.piperVoiceId || 'ru_RU-dmitri-medium').trim(),
     piperModelPath: String(settings.piperModelPath || '').trim(),
@@ -112,6 +109,11 @@ function normalizeCommand(value) {
 function normalizeEngine(value) {
   const engine = String(value || 'browser').trim().toLowerCase();
   return ['browser', 'piper', 'silero'].includes(engine) ? engine : 'browser';
+}
+
+function normalizeLanguage(value) {
+  const lang = String(value || 'en-US').trim();
+  return /^[a-z]{2,3}-[A-Z]{2,4}$/.test(lang) ? lang : 'en-US';
 }
 
 function normalizeRoute(value) {

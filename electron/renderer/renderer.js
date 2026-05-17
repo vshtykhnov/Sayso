@@ -4,14 +4,13 @@ const fields = {
   twitchUsername: document.querySelector('#twitchUsername'),
   twitchOAuthToken: document.querySelector('#twitchOAuthToken'),
   port: document.querySelector('#port'),
-  readUsernames: document.querySelector('#readUsernames'),
+  readUsernames: document.querySelector('#usernameConnector'),
   ttsEngine: document.querySelector('#ttsEngine'),
+  ttsLanguage: document.querySelector('#ttsLanguage'),
   ttsCommand: document.querySelector('#ttsCommand'),
   maxMessageLength: document.querySelector('#maxMessageLength'),
   minSecondsBetweenMessages: document.querySelector('#minSecondsBetweenMessages'),
   voiceVolume: document.querySelector('#voiceVolume'),
-  voiceRate: document.querySelector('#voiceRate'),
-  voicePitch: document.querySelector('#voicePitch'),
   piperVoiceId: document.querySelector('#piperVoiceId'),
   sileroSpeaker: document.querySelector('#sileroSpeaker'),
   ignoredUsers: document.querySelector('#ignoredUsers')
@@ -24,7 +23,6 @@ const startButton = document.querySelector('#start');
 const stopButton = document.querySelector('#stop');
 const copyButton = document.querySelector('#copy-url');
 const openButton = document.querySelector('#open-url');
-const openDebugButton = document.querySelector('#open-debug');
 const testButton = document.querySelector('#test');
 const loginTwitchButton = document.querySelector('#login-twitch');
 const validateTokenButton = document.querySelector('#validate-token');
@@ -32,11 +30,8 @@ const logPathEl = document.querySelector('#log-path');
 const copyLogPathButton = document.querySelector('#copy-log-path');
 const openLogsButton = document.querySelector('#open-logs');
 const voiceVolumeValueEl = document.querySelector('#voiceVolumeValue');
-const voiceRateValueEl = document.querySelector('#voiceRateValue');
-const voicePitchValueEl = document.querySelector('#voicePitchValue');
 
 let currentUrl = 'http://localhost:3000';
-let currentDebugUrl = 'http://localhost:3000/debug';
 
 const initial = await window.miljenTts.loadSettings();
 fillForm(initial.settings);
@@ -84,10 +79,6 @@ copyButton.addEventListener('click', async () => {
 
 openButton.addEventListener('click', () => {
   window.miljenTts.openExternal(currentUrl);
-});
-
-openDebugButton.addEventListener('click', () => {
-  window.miljenTts.openExternal(currentDebugUrl);
 });
 
 copyLogPathButton.addEventListener('click', async () => {
@@ -143,7 +134,7 @@ for (const input of Object.values(fields)) {
   });
 }
 
-for (const input of [fields.voiceVolume, fields.voiceRate, fields.voicePitch]) {
+for (const input of [fields.voiceVolume]) {
   input.addEventListener('input', async () => {
     renderVoiceValues();
     const settings = readForm();
@@ -152,8 +143,19 @@ for (const input of [fields.voiceVolume, fields.voiceRate, fields.voicePitch]) {
   });
 }
 
-for (const input of [fields.ttsEngine, fields.piperVoiceId, fields.sileroSpeaker]) {
+function syncLanguageToEngine() {
+  const engine = fields.ttsEngine.value;
+  if (engine === 'piper' || engine === 'silero') {
+    fields.ttsLanguage.value = 'ru-RU';
+    fields.ttsLanguage.disabled = true;
+  } else {
+    fields.ttsLanguage.disabled = false;
+  }
+}
+
+for (const input of [fields.ttsEngine, fields.ttsLanguage, fields.piperVoiceId, fields.sileroSpeaker]) {
   input.addEventListener('change', async () => {
+    if (input === fields.ttsEngine) syncLanguageToEngine();
     const settings = readForm();
     await window.miljenTts.saveSettings(settings);
     await window.miljenTts.updateTtsSettings(settings);
@@ -166,17 +168,17 @@ function fillForm(settings) {
   fields.twitchUsername.value = settings.twitchUsername || '';
   fields.twitchOAuthToken.value = settings.twitchOAuthToken || '';
   fields.port.value = settings.port || 3000;
-  fields.readUsernames.checked = Boolean(settings.readUsernames);
+  fields.readUsernames.value = settings.usernameConnector ?? '';
   fields.ttsEngine.value = settings.ttsEngine || 'browser';
+  fields.ttsLanguage.value = settings.ttsLanguage || 'en-US';
   fields.ttsCommand.value = settings.ttsCommand || '!tts';
   fields.maxMessageLength.value = settings.maxMessageLength || 220;
   fields.minSecondsBetweenMessages.value = settings.minSecondsBetweenMessages || 1.2;
   fields.voiceVolume.value = settings.voiceVolume ?? 1;
-  fields.voiceRate.value = settings.voiceRate ?? 1;
-  fields.voicePitch.value = settings.voicePitch ?? 1;
   fields.piperVoiceId.value = settings.piperVoiceId || 'ru_RU-dmitri-medium';
   fields.sileroSpeaker.value = settings.sileroSpeaker || 'xenia';
   fields.ignoredUsers.value = settings.ignoredUsers || 'nightbot,streamelements';
+  syncLanguageToEngine();
 }
 
 function readForm() {
@@ -186,14 +188,13 @@ function readForm() {
     twitchUsername: fields.twitchUsername.value,
     twitchOAuthToken: fields.twitchOAuthToken.value,
     port: Number(fields.port.value),
-    readUsernames: fields.readUsernames.checked,
+    usernameConnector: fields.readUsernames.value,
     ttsEngine: fields.ttsEngine.value,
+    ttsLanguage: fields.ttsLanguage.value,
     ttsCommand: fields.ttsCommand.value,
     maxMessageLength: Number(fields.maxMessageLength.value),
     minSecondsBetweenMessages: Number(fields.minSecondsBetweenMessages.value),
     voiceVolume: Number(fields.voiceVolume.value),
-    voiceRate: Number(fields.voiceRate.value),
-    voicePitch: Number(fields.voicePitch.value),
     piperVoiceId: fields.piperVoiceId.value,
     sileroSpeaker: fields.sileroSpeaker.value,
     ignoredUsers: fields.ignoredUsers.value
@@ -202,13 +203,10 @@ function readForm() {
 
 function renderVoiceValues() {
   voiceVolumeValueEl.textContent = `${Math.round(Number(fields.voiceVolume.value) * 100)}%`;
-  voiceRateValueEl.textContent = `${Number(fields.voiceRate.value).toFixed(2)}x`;
-  voicePitchValueEl.textContent = Number(fields.voicePitch.value).toFixed(2);
 }
 
 function setServerState(server) {
   currentUrl = server.url;
-  currentDebugUrl = server.debugUrl || server.url.replace(/\/obs$/, '/debug');
   obsUrlEl.textContent = server.url;
   startButton.disabled = server.running;
   stopButton.disabled = !server.running;

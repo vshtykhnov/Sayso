@@ -1,17 +1,32 @@
 const statusEl = document.querySelector('#status');
 const player = document.querySelector('#player');
+const clickHint = document.querySelector('#click-hint');
 
 const state = {
   queue: [],
   speaking: false,
+  audioUnlocked: typeof window.obsstudio !== 'undefined',
   minDelayMs: 1200,
   voices: [],
   settings: {
     voiceVolume: 1,
-    voiceRate: 1,
-    voicePitch: 1
+    ttsLanguage: 'en-US'
   }
 };
+
+if (!state.audioUnlocked) {
+  clickHint.classList.remove('hidden');
+}
+
+document.addEventListener('click', () => {
+  if (!state.audioUnlocked) {
+    state.audioUnlocked = true;
+    clickHint.classList.add('hidden');
+    player.play().catch(() => {});
+    setStatus('audio-unlocked');
+    drainQueue();
+  }
+});
 
 await loadConfig();
 setupVoices();
@@ -63,7 +78,7 @@ function connect() {
 }
 
 async function drainQueue() {
-  if (state.speaking || state.queue.length === 0) {
+  if (state.speaking || state.queue.length === 0 || !state.audioUnlocked) {
     return;
   }
 
@@ -90,9 +105,13 @@ function playAudio(url) {
     player.currentTime = 0;
     player.src = url;
     player.volume = Number(state.settings.voiceVolume);
-    player.onended = resolve;
-    player.onerror = resolve;
-    player.play().catch(resolve);
+
+    const timeout = setTimeout(resolve, 30000);
+    const done = () => { clearTimeout(timeout); resolve(); };
+
+    player.onended = done;
+    player.onerror = done;
+    player.play().catch(done);
   });
 }
 
@@ -103,24 +122,33 @@ function speak(text) {
       return;
     }
 
+    if (typeof window.obsstudio !== 'undefined') {
+      setStatus('browser-tts-not-supported-in-obs');
+      resolve();
+      return;
+    }
+
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
+    const langCode = (state.settings.ttsLanguage || 'en-US').split('-')[0].toLowerCase();
     const selectedVoice =
-      state.voices.find((voice) => voice.lang.toLowerCase().startsWith('ru')) || state.voices[0];
+      state.voices.find((voice) => voice.lang.toLowerCase().startsWith(langCode)) || state.voices[0];
 
     if (selectedVoice) {
       utterance.voice = selectedVoice;
       utterance.lang = selectedVoice.lang;
     } else {
-      utterance.lang = 'ru-RU';
+      utterance.lang = state.settings.ttsLanguage || 'en-US';
     }
 
     utterance.volume = Number(state.settings.voiceVolume);
-    utterance.rate = Number(state.settings.voiceRate);
-    utterance.pitch = Number(state.settings.voicePitch);
-    utterance.onend = resolve;
-    utterance.onerror = resolve;
+
+    const timeout = setTimeout(resolve, Math.max(10000, text.length * 80));
+    const done = () => { clearTimeout(timeout); resolve(); };
+
+    utterance.onend = done;
+    utterance.onerror = done;
     window.speechSynthesis.speak(utterance);
   });
 }
@@ -142,12 +170,8 @@ function applySettings(settings) {
     state.settings.voiceVolume = settings.voiceVolume;
   }
 
-  if (settings.voiceRate !== undefined) {
-    state.settings.voiceRate = settings.voiceRate;
-  }
-
-  if (settings.voicePitch !== undefined) {
-    state.settings.voicePitch = settings.voicePitch;
+  if (settings.ttsLanguage !== undefined) {
+    state.settings.ttsLanguage = settings.ttsLanguage;
   }
 
   player.volume = Number(state.settings.voiceVolume);

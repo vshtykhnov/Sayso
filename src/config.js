@@ -1,13 +1,12 @@
 const DEFAULTS = {
   port: 3000,
-  readUsernames: true,
+  usernameConnector: '',
   ttsCommand: '!tts',
   maxMessageLength: 220,
   minSecondsBetweenMessages: 1.2,
   voiceVolume: 1,
-  voiceRate: 1,
-  voicePitch: 1,
   ttsEngine: 'browser',
+  ttsLanguage: 'en-US',
   obsRoute: '/obs',
   piperVoiceId: 'ru_RU-dmitri-medium',
   sileroSpeaker: 'xenia',
@@ -29,16 +28,15 @@ export function loadConfig(env = process.env) {
       hasCredentials
     },
     tts: {
-      readUsernames: parseBool(env.READ_USERNAMES, DEFAULTS.readUsernames),
+      usernameConnector: env.USERNAME_CONNECTOR ?? DEFAULTS.usernameConnector,
       maxMessageLength: parseNumber(env.MAX_MESSAGE_LENGTH, DEFAULTS.maxMessageLength),
       minSecondsBetweenMessages: parseNumber(
         env.MIN_SECONDS_BETWEEN_MESSAGES,
         DEFAULTS.minSecondsBetweenMessages
       ),
       voiceVolume: parseRangeNumber(env.VOICE_VOLUME, DEFAULTS.voiceVolume, 0, 1),
-      voiceRate: parseRangeNumber(env.VOICE_RATE, DEFAULTS.voiceRate, 0.7, 1.4),
-      voicePitch: parseRangeNumber(env.VOICE_PITCH, DEFAULTS.voicePitch, 0.7, 1.3),
       ttsEngine: normalizeEngine(env.TTS_ENGINE || DEFAULTS.ttsEngine),
+      ttsLanguage: normalizeLanguage(env.TTS_LANGUAGE || DEFAULTS.ttsLanguage),
       obsRoute: normalizeRoute(env.OBS_ROUTE || DEFAULTS.obsRoute),
       piperVoiceId: String(env.PIPER_VOICE_ID || DEFAULTS.piperVoiceId).trim(),
       piperRuntimeDir: env.PIPER_RUNTIME_DIR || '',
@@ -61,17 +59,16 @@ export function getPublicConfig(config) {
   return {
     channel: config.twitch.channel,
     hasTwitchCredentials: config.twitch.hasCredentials,
-    readUsernames: config.tts.readUsernames,
+    usernameConnector: config.tts.usernameConnector,
     maxMessageLength: config.tts.maxMessageLength,
     minSecondsBetweenMessages: config.tts.minSecondsBetweenMessages,
     voiceVolume: config.tts.voiceVolume,
-    voiceRate: config.tts.voiceRate,
-    voicePitch: config.tts.voicePitch,
     ttsEngine: config.tts.ttsEngine,
     obsRoute: config.tts.obsRoute,
     obsUrl: `http://localhost:${config.port}${config.tts.obsRoute}`,
     piperVoiceId: config.tts.piperVoiceId,
     sileroSpeaker: config.tts.sileroSpeaker,
+    ttsLanguage: config.tts.ttsLanguage,
     piperModelConfigured: Boolean(config.tts.piperModelPath && config.tts.piperConfigPath),
     ttsCommand: config.filters.ttsCommand,
     ignoredUsers: [...config.filters.ignoredUsers]
@@ -123,6 +120,11 @@ function normalizeCommand(value) {
 function normalizeEngine(value) {
   const engine = String(value || DEFAULTS.ttsEngine).trim().toLowerCase();
   return ['browser', 'piper', 'silero'].includes(engine) ? engine : DEFAULTS.ttsEngine;
+}
+
+function normalizeLanguage(value) {
+  const lang = String(value || DEFAULTS.ttsLanguage).trim();
+  return /^[a-z]{2,3}-[A-Z]{2,4}$/.test(lang) ? lang : DEFAULTS.ttsLanguage;
 }
 
 function normalizeRoute(value) {

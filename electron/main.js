@@ -118,8 +118,6 @@ function registerIpc() {
 
     logger.info('TTS playback settings requested from UI.', {
       voiceVolume: settings.voiceVolume,
-      voiceRate: settings.voiceRate,
-      voicePitch: settings.voicePitch,
       ttsEngine: settings.ttsEngine,
       piperVoiceId: settings.piperVoiceId
     });
@@ -129,9 +127,9 @@ function registerIpc() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         voiceVolume: settings.voiceVolume,
-        voiceRate: settings.voiceRate,
-        voicePitch: settings.voicePitch,
+
         ttsEngine: settings.ttsEngine,
+        ttsLanguage: settings.ttsLanguage,
         piperVoiceId: settings.piperVoiceId,
         sileroSpeaker: settings.sileroSpeaker
       })
@@ -265,21 +263,24 @@ function getServerState(settings = configStore?.load()) {
 
   return {
     running: Boolean(ttsServer),
-    url: `http://localhost:${port}${obsRoute}`,
-    debugUrl: `http://localhost:${port}/debug`
+    url: `http://localhost:${port}${obsRoute}`
   };
 }
 
 function getServerBaseUrl() {
-  const settings = getServerState();
-  return settings.url.replace(/\/obs$/, '');
+  if (ttsServer) {
+    return ttsServer.url;
+  }
+
+  const port = configStore?.load()?.port || 3000;
+  return `http://localhost:${port}`;
 }
 
 async function sendTestMessage() {
   const response = await fetch(`${getServerBaseUrl()}/api/test-message`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text: 'Проверка озвучки. Если вы слышите этот текст, MiljenTTS работает.' })
+    body: JSON.stringify({})
   });
 
   const result = await response.json();
@@ -301,9 +302,8 @@ async function updateRunningTtsSettings(settings) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       voiceVolume: settings.voiceVolume,
-      voiceRate: settings.voiceRate,
-      voicePitch: settings.voicePitch,
       ttsEngine: settings.ttsEngine,
+      ttsLanguage: settings.ttsLanguage,
       piperVoiceId: settings.piperVoiceId,
       sileroSpeaker: settings.sileroSpeaker
     })

@@ -38,10 +38,6 @@ export function createTtsServer(config, options = {}) {
     res.sendFile(path.join(publicDir, 'obs.html'));
   });
 
-  app.get('/debug', (_req, res) => {
-    res.sendFile(path.join(publicDir, 'index.html'));
-  });
-
   app.get('/audio/:file', (req, res) => {
     const fileName = path.basename(req.params.file);
     const filePath = path.join(ttsRuntime.audioDir, fileName);
@@ -326,9 +322,8 @@ export function createTtsServer(config, options = {}) {
 function getTtsSettingsFromConfig(config) {
   return {
     voiceVolume: config.tts.voiceVolume,
-    voiceRate: config.tts.voiceRate,
-    voicePitch: config.tts.voicePitch,
     ttsEngine: config.tts.ttsEngine,
+    ttsLanguage: config.tts.ttsLanguage,
     piperVoiceId: config.tts.piperVoiceId,
     sileroSpeaker: config.tts.sileroSpeaker
   };
@@ -337,9 +332,8 @@ function getTtsSettingsFromConfig(config) {
 function normalizeTtsSettings(value, config) {
   return {
     voiceVolume: clampNumber(value?.voiceVolume, 1, 0, 1),
-    voiceRate: clampNumber(value?.voiceRate, 1, 0.7, 1.4),
-    voicePitch: clampNumber(value?.voicePitch, 1, 0.7, 1.3),
     ttsEngine: normalizeEngine(value?.ttsEngine, config.tts.ttsEngine),
+    ttsLanguage: normalizeLanguage(value?.ttsLanguage, config.tts.ttsLanguage),
     piperVoiceId: typeof value?.piperVoiceId === 'string' ? value.piperVoiceId : config.tts.piperVoiceId,
     sileroSpeaker: normalizeSileroSpeaker(value?.sileroSpeaker || config.tts.sileroSpeaker)
   };
@@ -348,6 +342,11 @@ function normalizeTtsSettings(value, config) {
 function normalizeEngine(value, fallback) {
   const engine = String(value || fallback || 'browser').toLowerCase();
   return ['browser', 'piper', 'silero'].includes(engine) ? engine : 'browser';
+}
+
+function normalizeLanguage(value, fallback) {
+  const lang = String(value || fallback || 'en-US').trim();
+  return /^[a-z]{2,3}-[A-Z]{2,4}$/.test(lang) ? lang : (fallback || 'en-US');
 }
 
 function normalizeSileroSpeaker(value) {
